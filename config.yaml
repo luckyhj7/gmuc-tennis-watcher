@@ -1,0 +1,10 @@
+timezone: Asia/Seoul
+lookahead_days: 14
+exclude_courts: [7, 8]
+schedule:
+  TUE: ["18:00-20:00", "20:00-22:00"]
+  THU: ["18:00-20:00", "20:00-22:00"]
+  SAT: ["08:00-10:00", "10:00-12:00"]
+request:
+  timeout_seconds: 15
+  delay_seconds: 1.5
