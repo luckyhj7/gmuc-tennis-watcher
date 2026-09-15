@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      diagnose_guest_access:
+        description: "Diagnose guest access (no login, no notification)"
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: "3,13,23,33,43,53 * * * *"
 
@@ -35,13 +40,16 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
           python -c "import os; from notifier import notify; notify(os.environ['NTFY_TOPIC'], '광명 테니스 알림 테스트', '성공! GitHub Actions → ntfy → 갤럭시 연결이 정상입니다.', 'https://reserve.gmuc.co.kr/user/tennis/tennisInsideReservation.do?menu=c&menuFlag=T')"
+      - name: Diagnose guest access
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.diagnose_guest_access && !inputs.test_notification }}
+        run: python diagnose_guest.py
       - name: Check availability
-        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.test_notification) }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.test_notification || inputs.diagnose_guest_access)) }}
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python main.py
       - name: Persist notification state
-        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.test_notification) }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.test_notification || inputs.diagnose_guest_access)) }}
         run: |
           if git diff --quiet -- state.json 2>/dev/null && [ -f state.json ]; then exit 0; fi
           git config user.name "github-actions[bot]"
