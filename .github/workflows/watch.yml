@@ -2,6 +2,12 @@ name: Watch GMUC tennis
 
 on:
   workflow_dispatch:
+    inputs:
+      test_notification:
+        description: "Send ntfy test notification only"
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: "3,13,23,33,43,53 * * * *"
 
@@ -23,11 +29,19 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      - name: Send test notification
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_notification }}
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          python -c "import os; from notifier import notify; notify(os.environ['NTFY_TOPIC'], '광명 테니스 알림 테스트', '성공! GitHub Actions → ntfy → 갤럭시 연결이 정상입니다.', 'https://reserve.gmuc.co.kr/user/tennis/tennisInsideReservation.do?menu=c&menuFlag=T')"
       - name: Check availability
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.test_notification) }}
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python main.py
       - name: Persist notification state
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.test_notification) }}
         run: |
           if git diff --quiet -- state.json 2>/dev/null && [ -f state.json ]; then exit 0; fi
           git config user.name "github-actions[bot]"
